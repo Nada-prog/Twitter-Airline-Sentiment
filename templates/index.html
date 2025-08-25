@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sentiment Analysis</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f4f6f9; margin: 0; padding: 0; }
+        .container { max-width: 800px; margin: 50px auto; background: #fff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { text-align: center; margin-bottom: 20px; color: #333; }
+        textarea { width: 100%; padding: 15px; border-radius: 8px; border: 1px solid #ddd; font-size: 16px; }
+        button { margin-top: 10px; padding: 12px 20px; background: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        .results { margin-top: 30px; }
+        .card { padding: 20px; border-radius: 10px; margin-bottom: 20px; }
+        .positive { background: #d4edda; color: #155724; }
+        .negative { background: #f8d7da; color: #721c24; }
+        .neutral { background: #fff3cd; color: #856404; }
+        .chart-container { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Sentiment Analysis Dashboard</h1>
+        <form method="post">
+            <textarea name="text" rows="3" placeholder="Enter your text...">{{ user_input }}</textarea>
+            <button type="submit">Analyze</button>
+        </form>
+
+        {% if logistic_pred %}
+        <div class="results">
+            <div class="card {% if logistic_pred == 'positive' %}positive{% elif logistic_pred == 'negative' %}negative{% else %}neutral{% endif %}">
+                <h3>Logistic Regression Prediction: {{ logistic_pred|capitalize }}</h3>
+                <div class="chart-container">
+                    <canvas id="logisticChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card {% if vader_pred == 'positive' %}positive{% elif vader_pred == 'negative' %}negative{% else %}neutral{% endif %}">
+                <h3>VADER Prediction: {{ vader_pred|capitalize }}</h3>
+                <p><strong>Scores:</strong> Neg={{ vader_scores.neg }}, Neu={{ vader_scores.neu }}, Pos={{ vader_scores.pos }}, Compound={{ vader_scores.compound }}</p>
+                <div class="chart-container">
+                    <canvas id="vaderChart"></canvas>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        {% if logistic_probas %}
+        new Chart(document.getElementById('logisticChart'), {
+            type: 'bar',
+            data: {
+                labels: {{ logistic_probas.keys()|list|tojson }},
+                datasets: [{
+                    label: 'Probability',
+                    data: {{ logistic_probas.values()|list|tojson }},
+                    backgroundColor: ['#dc3545','#ffc107','#28a745']
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, max: 1 } } }
+        });
+        {% endif %}
+
+        {% if vader_scores %}
+        new Chart(document.getElementById('vaderChart'), {
+            type: 'bar',
+            data: {
+                labels: ['Negative','Neutral','Positive'],
+                datasets: [{
+                    label: 'Score',
+                    data: [{{ vader_scores.neg }}, {{ vader_scores.neu }}, {{ vader_scores.pos }}],
+                    backgroundColor: ['#dc3545','#ffc107','#28a745']
+                }]
+            },
+            options: { scales: { y: { beginAtZero: true, max: 1 } } }
+        });
+        {% endif %}
+    </script>
+</body>
+</html>
